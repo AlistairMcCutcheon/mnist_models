@@ -44,20 +44,26 @@ class DatasetMNIST:
 
         self.all_images = np.concatenate((train_images, test_images))
         self.all_labels = np.concatenate((train_labels, test_labels))
+        assert len(self.all_images) == len(self.all_labels)
 
         print("All images shape:")
         print(self.all_images.shape)
         print(self.all_labels.shape)
 
-        for image, label in zip(
-            np.flip(self.all_images, axis=0), np.flip(self.all_labels, axis=0)
-        ):
-            print(label)
-            image = np.asarray(image).squeeze()
-            plt.imshow(image)
-            plt.show()
+        # for image, label in zip(
+        #     np.flip(self.all_images, axis=0), np.flip(self.all_labels, axis=0)
+        # ):
+        #     print(label)
+        #     image = np.asarray(image).squeeze()
+        #     plt.imshow(image)
+        #     plt.show()
+
+    def __len__(self):
+        assert len(self.all_images) == len(self.all_labels)
+        return len(self.all_images)
 
 
 image_size = 28
 data_path = "data/"
-DatasetMNIST(data_path, image_size)
+dataset = DatasetMNIST(data_path, image_size)
+print(len(dataset))
