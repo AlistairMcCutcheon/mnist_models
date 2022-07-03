@@ -1,7 +1,7 @@
 import gzip
 import numpy as np
 from matplotlib import pyplot as plt
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import os
 
 
@@ -24,6 +24,7 @@ class DatasetMNIST:
 
         # http://yann.lecun.com/exdb/mnist/
         self.data_path = data_path
+        self.image_size = image_size
 
         train_images_path = os.path.join(data_path, "train-images-idx3-ubyte.gz")
         train_labels_path = os.path.join(data_path, "train-labels-idx1-ubyte.gz")
@@ -35,35 +36,32 @@ class DatasetMNIST:
         test_images = get_images(test_images_path, image_size)
         test_labels = get_labels(test_labels_path)
 
-        print("Train images shape:")
-        print(train_images.shape)
-        print(train_labels.shape)
-        print("Test images shape")
-        print(test_images.shape)
-        print(test_labels.shape)
-
         self.all_images = np.concatenate((train_images, test_images))
         self.all_labels = np.concatenate((train_labels, test_labels))
         assert len(self.all_images) == len(self.all_labels)
 
-        print("All images shape:")
-        print(self.all_images.shape)
-        print(self.all_labels.shape)
-
-        # for image, label in zip(
-        #     np.flip(self.all_images, axis=0), np.flip(self.all_labels, axis=0)
-        # ):
-        #     print(label)
-        #     image = np.asarray(image).squeeze()
-        #     plt.imshow(image)
-        #     plt.show()
-
     def __len__(self):
         assert len(self.all_images) == len(self.all_labels)
         return len(self.all_images)
+
+    def __getitem__(self, index):
+        image = self.all_images[index]
+        label = self.all_labels[index]
+        return image, label
 
 
 image_size = 28
 data_path = "data/"
 dataset = DatasetMNIST(data_path, image_size)
 print(len(dataset))
+
+dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+
+batch_images, batch_labels = next(iter(dataloader))
+print(batch_images.shape)
+print(batch_labels.shape)
+for image, label in zip(batch_images, batch_labels):
+    print(label)
+    image = np.asarray(image).squeeze()
+    plt.imshow(image)
+    plt.show()
