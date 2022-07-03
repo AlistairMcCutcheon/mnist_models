@@ -7,22 +7,33 @@ def get_train_images(train_images_path, image_size, num_images):
     with gzip.open(train_images_path) as file:
         file.read(16)
         buffer = file.read(image_size * image_size * num_images)
-    train_images = np.frombuffer(buffer, dtype=np.uint8).astype(np.float32)
+    train_images = np.frombuffer(buffer, dtype=np.uint8)
     train_images = train_images.reshape(num_images, 1, image_size, image_size)
     return train_images
+
+
+def get_train_labels(train_labels_path, num_images):
+    with gzip.open(train_labels_path) as file:
+        file.read(8)
+        buffer = file.read(num_images)
+    train_labels = np.frombuffer(buffer, dtype=np.uint8)
+    return train_labels
 
 
 image_size = 28
 num_images = 5
 # http://yann.lecun.com/exdb/mnist/
-train_images_path = "data/mnist/train-images-idx3-ubyte.gz"
+train_images_path = "data/train-images-idx3-ubyte.gz"
+train_labels_path = "data/train-labels-idx1-ubyte.gz"
 train_images = get_train_images(train_images_path, image_size, num_images)
+train_labels = get_train_labels(train_labels_path, num_images)
 
 print(train_images.shape)
+print(train_labels.shape)
 
-image = np.asarray(train_images[0]).squeeze()
-plt.imshow(image)
-plt.show()
-
-
-
+print(train_labels)
+for image, label in zip(train_images, train_labels):
+    print(label)
+    image = np.asarray(image).squeeze()
+    plt.imshow(image)
+    plt.show()
