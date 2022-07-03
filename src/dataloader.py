@@ -3,8 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def get_train_images(train_images_path, image_size, num_images):
-    with gzip.open(train_images_path) as file:
+def get_images(images_path, image_size, num_images):
+    with gzip.open(images_path) as file:
         file.read(16)
         buffer = file.read(image_size * image_size * num_images)
     train_images = np.frombuffer(buffer, dtype=np.uint8)
@@ -12,8 +12,8 @@ def get_train_images(train_images_path, image_size, num_images):
     return train_images
 
 
-def get_train_labels(train_labels_path, num_images):
-    with gzip.open(train_labels_path) as file:
+def get_labels(labels_path, num_images):
+    with gzip.open(labels_path) as file:
         file.read(8)
         buffer = file.read(num_images)
     train_labels = np.frombuffer(buffer, dtype=np.uint8)
