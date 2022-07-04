@@ -35,15 +35,21 @@ class DatasetMNIST(Dataset):
         test_images = get_images(test_images_path, image_size)
         test_labels = get_labels(test_labels_path)
 
-        self.all_images = np.concatenate((train_images, test_images)).astype(np.float32)
-        self.all_labels = np.concatenate((train_labels, test_labels)).astype(np.float32)
-        assert len(self.all_images) == len(self.all_labels)
+        self.all_images = np.concatenate((train_images, test_images))
+        all_labels = np.concatenate((train_labels, test_labels))
+        assert len(self.all_images) == len(all_labels)
+
+        self.one_hot_labels = np.zeros((len(all_labels), 10))
+        self.one_hot_labels[np.arange(len(all_labels)), all_labels] = 1
+
+        self.all_images = self.all_images.astype(np.float32)
+        self.one_hot_labels = self.one_hot_labels.astype(np.float32)
 
     def __len__(self):
-        assert len(self.all_images) == len(self.all_labels)
+        assert len(self.all_images) == len(self.one_hot_labels)
         return len(self.all_images)
 
     def __getitem__(self, index):
         image = self.all_images[index]
-        label = self.all_labels[index]
+        label = self.one_hot_labels[index]
         return image, label
