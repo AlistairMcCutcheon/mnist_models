@@ -29,12 +29,12 @@ network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
 
-epochs = 1
-for epoch in range(epochs):
+
+def train_one_epoch(train_dataloader, optimiser, loss_function):
     loss_history = []
     accuracy_history = []
-    for i, data in enumerate(train_dataloader):
-        images, labels = data
+    for batch in train_dataloader:
+        images, labels = batch
 
         optimiser.zero_grad()
 
@@ -49,38 +49,45 @@ for epoch in range(epochs):
         correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
         accuracy_history.append(np.mean(correct_array))
 
+    return loss_history, accuracy_history
+
+
+epochs = 1
+for epoch in range(epochs):
+
+    loss_history, accuracy_history = train_one_epoch(
+        train_dataloader, optimiser, loss_function
+    )
+
     print(f"Epoch: {epoch}")
-    print(f"Running Loss: {np.mean(loss_history)}")
-    print(f"Running Accuracy: {np.mean(accuracy_history)}")
+    print(f"Train Loss: {np.mean(loss_history)}")
+    print(f"Train Accuracy: {np.mean(accuracy_history)}")
 
+    loss_history = []
+    accuracy_history = []
 
-loss_history = []
-accuracy_history = []
+    incorrect_guesses_images = []
+    incorrect_guesses_labels = []
 
-incorrect_guesses_images = []
-incorrect_guesses_labels = []
+    with torch.no_grad():
+        for i, data in enumerate(test_dataloader):
+            images, labels = data
 
-with torch.no_grad():
-    for i, data in enumerate(test_dataloader):
-        images, labels = data
+            outputs = network(images)
+            loss = loss_function(outputs, labels)
 
-        outputs = network(images)
-        loss = loss_function(outputs, labels)
+            loss_history.append(loss.item())
 
-        loss_history.append(loss.item())
+            labels = np.array(labels)
+            correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
+            accuracy_history.append(np.mean(correct_array))
 
-        labels = np.array(labels)
-        correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-        accuracy_history.append(np.mean(correct_array))
+            incorrect_indices = np.where(correct_array == 0)
+            incorrect_guesses_images.extend(images[incorrect_indices])
+            incorrect_guesses_labels.extend(outputs[incorrect_indices])
 
-        incorrect_indices = np.where(correct_array == 0)
-        incorrect_guesses_images.extend(images[incorrect_indices])
-        incorrect_guesses_labels.extend(outputs[incorrect_indices])
-
-
-print(f"Testing Dataset:")
-print(f"Running Loss: {np.mean(loss_history)}")
-print(f"Running Accuracy: {np.mean(accuracy_history)}")
+    print(f"Test Loss: {np.mean(loss_history)}")
+    print(f"Test Accuracy: {np.mean(accuracy_history)}")
 
 
 for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
