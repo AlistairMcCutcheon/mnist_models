@@ -22,13 +22,13 @@ batch_size = 4
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
 
-learning_rate = 0.001
+learning_rate = 0.0001
 momentum = 0.9
 network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
 
-epochs = 10
+epochs = 1
 for epoch in range(epochs):
     loss_history = []
     accuracy_history = []
@@ -53,8 +53,47 @@ for epoch in range(epochs):
     print(f"Running Accuracy: {np.mean(accuracy_history)}")
 
 
-# batch_images, batch_labels = next(iter(train_dataloader))
-# print(batch_labels)
-# image_grid = torchvision.utils.make_grid(batch_images.int(), padding=2, pad_value=255)
-# plt.imshow(np.transpose(image_grid, (1, 2, 0)))
-# plt.show()
+loss_history = []
+accuracy_history = []
+
+incorrect_guesses_images = []
+incorrect_guesses_labels = []
+
+
+for i, data in enumerate(test_dataloader):
+    images, labels = data
+
+    optimiser.zero_grad()
+
+    outputs = network(images)
+    loss = loss_function(outputs, labels)
+    loss.backward()
+    optimiser.step()
+
+    loss_history.append(loss.item())
+
+    labels = np.array(labels)
+    correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
+    accuracy_history.append(np.mean(correct_array))
+
+    incorrect_indices = np.where(correct_array == 0)
+    incorrect_guesses_images.extend(images[incorrect_indices])
+    incorrect_guesses_labels.extend(outputs[incorrect_indices])
+
+
+print(f"Testing Dataset:")
+print(f"Running Loss: {np.mean(loss_history)}")
+print(f"Running Accuracy: {np.mean(accuracy_history)}")
+
+
+for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
+    print(incorrect_label)
+    print(image.shape)
+    plt.imshow(np.transpose(image, (1, 2, 0)))
+    plt.show()
+
+    # image_grid = torchvision.utils.make_grid(
+    #     batch_images.int(), padding=2, pad_value=255
+    # )
+    # plt.imshow(np.transpose(image_grid, (1, 2, 0)))
+    # plt.show()
