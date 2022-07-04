@@ -30,6 +30,17 @@ loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
 
 
+def get_accuracy_metrics(labels, outputs):
+    labels = np.array(labels)
+    correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
+    average_accuracy = np.mean(correct_array)
+    accuracy_metrics = {
+        "average_accuracy": average_accuracy,
+        "correct_array": correct_array,
+    }
+    return accuracy_metrics
+
+
 def train_one_epoch(train_dataloader, optimiser, loss_function):
     loss_history = []
     accuracy_history = []
@@ -45,12 +56,11 @@ def train_one_epoch(train_dataloader, optimiser, loss_function):
 
         loss_history.append(loss.item())
 
-        labels = np.array(labels)
-        correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-        accuracy_history.append(np.mean(correct_array))
+        accuracy_metrics = get_accuracy_metrics(labels, outputs)
+        accuracy_history.append(accuracy_metrics["average_accuracy"])
 
-    metrics = {"loss_history": loss_history, "accuracy_history": accuracy_history}
-    return metrics
+    train_metrics = {"loss_history": loss_history, "accuracy_history": accuracy_history}
+    return train_metrics
 
 
 def test_one_epoch(test_dataloader, loss_function):
@@ -68,23 +78,21 @@ def test_one_epoch(test_dataloader, loss_function):
             loss = loss_function(outputs, labels)
 
             loss_history.append(loss.item())
+            accuracy_metrics = get_accuracy_metrics(labels, outputs)
+            accuracy_history.append(accuracy_metrics["average_accuracy"])
 
-            labels = np.array(labels)
-            correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-            accuracy_history.append(np.mean(correct_array))
-
-            incorrect_indices = np.where(correct_array == 0)
+            incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
             incorrect_guesses_images.extend(images[incorrect_indices])
             incorrect_guesses_labels.extend(outputs[incorrect_indices])
 
-    metrics = {
+    test_metrics = {
         "loss_history": loss_history,
         "accuracy_history": accuracy_history,
         "incorrect_guesses_images": incorrect_guesses_images,
         "incorrect_guesses_labels": incorrect_guesses_labels,
     }
 
-    return metrics
+    return test_metrics
 
 
 epochs = 1
@@ -98,11 +106,11 @@ for epoch in range(epochs):
     print(f"Train Accuracy: {average_train_accuracy}")
 
     test_metrics = test_one_epoch(test_dataloader, loss_function)
-    average_loss = np.mean(test_metrics["loss_history"])
-    average_accuracy = np.mean(test_metrics["accuracy_history"])
+    average_test_loss = np.mean(test_metrics["loss_history"])
+    average_test_accuracy = np.mean(test_metrics["accuracy_history"])
 
-    print(f"Test Loss: {average_loss}")
-    print(f"Test Accuracy: {average_accuracy}")
+    print(f"Test Loss: {average_test_loss}")
+    print(f"Test Accuracy: {average_test_accuracy}")
 
 
 # for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
