@@ -35,8 +35,8 @@ class DatasetMNIST(Dataset):
         test_images = get_images(test_images_path, image_size)
         test_labels = get_labels(test_labels_path)
 
-        self.all_images = np.concatenate((train_images, test_images))
-        self.all_labels = np.concatenate((train_labels, test_labels))
+        self.all_images = np.concatenate((train_images, test_images)).astype(np.float32)
+        self.all_labels = np.concatenate((train_labels, test_labels)).astype(np.float32)
         assert len(self.all_images) == len(self.all_labels)
 
     def __len__(self):
