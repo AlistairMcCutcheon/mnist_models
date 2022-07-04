@@ -21,8 +21,8 @@ def get_accuracy_metrics(labels, outputs):
 
 
 def train_one_epoch(train_dataloader, optimiser, loss_function):
-    loss_history = []
-    accuracy_history = []
+    epoch_losses = []
+    epoch_accuracies = []
     for batch in train_dataloader:
         images, labels = batch
 
@@ -33,17 +33,17 @@ def train_one_epoch(train_dataloader, optimiser, loss_function):
         loss.backward()
         optimiser.step()
 
-        loss_history.append(loss.item())
+        epoch_losses.append(loss.item())
         accuracy_metrics = get_accuracy_metrics(labels, outputs)
-        accuracy_history.append(accuracy_metrics["average_accuracy"])
+        epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
-    train_metrics = {"loss_history": loss_history, "accuracy_history": accuracy_history}
+    train_metrics = {"epoch_losses": epoch_losses, "epoch_accuracies": epoch_accuracies}
     return train_metrics
 
 
 def test_one_epoch(test_dataloader, loss_function):
-    loss_history = []
-    accuracy_history = []
+    epoch_losses = []
+    epoch_accuracies = []
 
     incorrect_images = []
     incorrect_labels = []
@@ -55,17 +55,17 @@ def test_one_epoch(test_dataloader, loss_function):
             outputs = network(images)
             loss = loss_function(outputs, labels)
 
-            loss_history.append(loss.item())
+            epoch_losses.append(loss.item())
             accuracy_metrics = get_accuracy_metrics(labels, outputs)
-            accuracy_history.append(accuracy_metrics["average_accuracy"])
+            epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
             incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
             incorrect_images.extend(images[incorrect_indices])
             incorrect_labels.extend(outputs[incorrect_indices])
 
     test_metrics = {
-        "loss_history": loss_history,
-        "accuracy_history": accuracy_history,
+        "epoch_losses": epoch_losses,
+        "epoch_accuracies": epoch_accuracies,
         "incorrect_images": incorrect_images,
         "incorrect_labels": incorrect_labels,
     }
@@ -94,22 +94,48 @@ network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
 
-epochs = 10
+train_loss_history = []
+train_accuracy_history = []
+test_loss_history = []
+test_accuracy_history = []
+
+epochs = 5
 for epoch in range(epochs):
     train_metrics = train_one_epoch(train_dataloader, optimiser, loss_function)
-    average_train_loss = np.mean(train_metrics["loss_history"])
-    average_train_accuracy = np.mean(train_metrics["accuracy_history"])
+    average_train_loss = np.mean(train_metrics["epoch_losses"])
+    average_train_accuracy = np.mean(train_metrics["epoch_accuracies"])
+
+    train_loss_history.append(average_train_loss)
+    train_accuracy_history.append(average_train_accuracy)
 
     print(f"Epoch: {epoch}")
     print(f"Train Loss: {average_train_loss}")
     print(f"Train Accuracy: {average_train_accuracy}")
 
     test_metrics = test_one_epoch(test_dataloader, loss_function)
-    average_test_loss = np.mean(test_metrics["loss_history"])
-    average_test_accuracy = np.mean(test_metrics["accuracy_history"])
+    average_test_loss = np.mean(test_metrics["epoch_losses"])
+    average_test_accuracy = np.mean(test_metrics["epoch_accuracies"])
+
+    test_loss_history.append(average_test_loss)
+    test_accuracy_history.append(average_test_accuracy)
 
     print(f"Test Loss: {average_test_loss}")
     print(f"Test Accuracy: {average_test_accuracy}")
+
+
+plt.plot(range(epochs), train_loss_history, color="red")
+plt.plot(range(epochs), test_loss_history, color="blue")
+plt.title("Loss per Epoch")
+plt.xlabel("epoch")
+plt.ylabel("loss")
+plt.show()
+
+plt.plot(range(epochs), train_accuracy_history, color="red")
+plt.plot(range(epochs), test_accuracy_history, color="blue")
+plt.title("Accuracy per Epoch")
+plt.xlabel("epoch")
+plt.ylabel("accuracy")
+plt.show()
 
 incorrect_dataset = zip(
     test_metrics["incorrect_images"], test_metrics["incorrect_labels"]
