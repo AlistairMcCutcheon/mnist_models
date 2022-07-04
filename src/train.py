@@ -8,27 +8,6 @@ from convolutional_network import ConvNet
 import torch.nn as nn
 import torch
 
-image_size = 28
-data_path = "data/"
-dataset = DatasetMNIST(data_path, image_size)
-
-data_split_fractions = [0.8, 0.2]
-assert sum(data_split_fractions) == 1
-data_split_numbers = np.multiply(data_split_fractions, len(dataset)).astype(np.int32)
-assert sum(data_split_numbers) == len(dataset)
-datasets = random_split(dataset, data_split_numbers)
-train_dataset, test_dataset = datasets
-
-batch_size = 4
-train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
-
-learning_rate = 0.0001
-momentum = 0.9
-network = ConvNet()
-loss_function = nn.CrossEntropyLoss()
-optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
-
 
 def get_accuracy_metrics(labels, outputs):
     labels = np.array(labels)
@@ -55,7 +34,6 @@ def train_one_epoch(train_dataloader, optimiser, loss_function):
         optimiser.step()
 
         loss_history.append(loss.item())
-
         accuracy_metrics = get_accuracy_metrics(labels, outputs)
         accuracy_history.append(accuracy_metrics["average_accuracy"])
 
@@ -67,8 +45,8 @@ def test_one_epoch(test_dataloader, loss_function):
     loss_history = []
     accuracy_history = []
 
-    incorrect_guesses_images = []
-    incorrect_guesses_labels = []
+    incorrect_images = []
+    incorrect_labels = []
 
     with torch.no_grad():
         for batch in test_dataloader:
@@ -82,20 +60,41 @@ def test_one_epoch(test_dataloader, loss_function):
             accuracy_history.append(accuracy_metrics["average_accuracy"])
 
             incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
-            incorrect_guesses_images.extend(images[incorrect_indices])
-            incorrect_guesses_labels.extend(outputs[incorrect_indices])
+            incorrect_images.extend(images[incorrect_indices])
+            incorrect_labels.extend(outputs[incorrect_indices])
 
     test_metrics = {
         "loss_history": loss_history,
         "accuracy_history": accuracy_history,
-        "incorrect_guesses_images": incorrect_guesses_images,
-        "incorrect_guesses_labels": incorrect_guesses_labels,
+        "incorrect_images": incorrect_images,
+        "incorrect_labels": incorrect_labels,
     }
 
     return test_metrics
 
 
-epochs = 1
+image_size = 28
+data_path = "data/"
+dataset = DatasetMNIST(data_path, image_size)
+
+data_split_fractions = [0.8, 0.2]
+assert sum(data_split_fractions) == 1
+data_split_numbers = np.multiply(data_split_fractions, len(dataset)).astype(np.int32)
+assert sum(data_split_numbers) == len(dataset)
+datasets = random_split(dataset, data_split_numbers)
+train_dataset, test_dataset = datasets
+
+batch_size = 32
+train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
+
+learning_rate = 0.0001
+momentum = 0.9
+network = ConvNet()
+loss_function = nn.CrossEntropyLoss()
+optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
+
+epochs = 10
 for epoch in range(epochs):
     train_metrics = train_one_epoch(train_dataloader, optimiser, loss_function)
     average_train_loss = np.mean(train_metrics["loss_history"])
@@ -112,12 +111,14 @@ for epoch in range(epochs):
     print(f"Test Loss: {average_test_loss}")
     print(f"Test Accuracy: {average_test_accuracy}")
 
-
-# for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
-#     print(incorrect_label)
-#     print(image.shape)
-#     plt.imshow(np.transpose(image, (1, 2, 0)))
-#     plt.show()
+incorrect_dataset = zip(
+    test_metrics["incorrect_images"], test_metrics["incorrect_labels"]
+)
+for image, incorrect_label in incorrect_dataset:
+    print(incorrect_label)
+    print(image.shape)
+    plt.imshow(np.transpose(image, (1, 2, 0)))
+    plt.show()
 
 # image_grid = torchvision.utils.make_grid(
 #     batch_images.int(), padding=2, pad_value=255
