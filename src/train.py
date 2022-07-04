@@ -6,6 +6,7 @@ import torchvision
 import torch.optim as optim
 from convolutional_network import ConvNet
 import torch.nn as nn
+import torch
 
 image_size = 28
 data_path = "data/"
@@ -59,26 +60,22 @@ accuracy_history = []
 incorrect_guesses_images = []
 incorrect_guesses_labels = []
 
+with torch.no_grad():
+    for i, data in enumerate(test_dataloader):
+        images, labels = data
 
-for i, data in enumerate(test_dataloader):
-    images, labels = data
+        outputs = network(images)
+        loss = loss_function(outputs, labels)
 
-    optimiser.zero_grad()
+        loss_history.append(loss.item())
 
-    outputs = network(images)
-    loss = loss_function(outputs, labels)
-    loss.backward()
-    optimiser.step()
+        labels = np.array(labels)
+        correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
+        accuracy_history.append(np.mean(correct_array))
 
-    loss_history.append(loss.item())
-
-    labels = np.array(labels)
-    correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-    accuracy_history.append(np.mean(correct_array))
-
-    incorrect_indices = np.where(correct_array == 0)
-    incorrect_guesses_images.extend(images[incorrect_indices])
-    incorrect_guesses_labels.extend(outputs[incorrect_indices])
+        incorrect_indices = np.where(correct_array == 0)
+        incorrect_guesses_images.extend(images[incorrect_indices])
+        incorrect_guesses_labels.extend(outputs[incorrect_indices])
 
 
 print(f"Testing Dataset:")
