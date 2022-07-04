@@ -49,20 +49,11 @@ def train_one_epoch(train_dataloader, optimiser, loss_function):
         correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
         accuracy_history.append(np.mean(correct_array))
 
-    return loss_history, accuracy_history
+    metrics = {"loss_history": loss_history, "accuracy_history": accuracy_history}
+    return metrics
 
 
-epochs = 1
-for epoch in range(epochs):
-
-    loss_history, accuracy_history = train_one_epoch(
-        train_dataloader, optimiser, loss_function
-    )
-
-    print(f"Epoch: {epoch}")
-    print(f"Train Loss: {np.mean(loss_history)}")
-    print(f"Train Accuracy: {np.mean(accuracy_history)}")
-
+def test_one_epoch(test_dataloader, loss_function):
     loss_history = []
     accuracy_history = []
 
@@ -70,8 +61,8 @@ for epoch in range(epochs):
     incorrect_guesses_labels = []
 
     with torch.no_grad():
-        for i, data in enumerate(test_dataloader):
-            images, labels = data
+        for batch in test_dataloader:
+            images, labels = batch
 
             outputs = network(images)
             loss = loss_function(outputs, labels)
@@ -86,18 +77,42 @@ for epoch in range(epochs):
             incorrect_guesses_images.extend(images[incorrect_indices])
             incorrect_guesses_labels.extend(outputs[incorrect_indices])
 
-    print(f"Test Loss: {np.mean(loss_history)}")
-    print(f"Test Accuracy: {np.mean(accuracy_history)}")
+    metrics = {
+        "loss_history": loss_history,
+        "accuracy_history": accuracy_history,
+        "incorrect_guesses_images": incorrect_guesses_images,
+        "incorrect_guesses_labels": incorrect_guesses_labels,
+    }
+
+    return metrics
 
 
-for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
-    print(incorrect_label)
-    print(image.shape)
-    plt.imshow(np.transpose(image, (1, 2, 0)))
-    plt.show()
+epochs = 1
+for epoch in range(epochs):
+    train_metrics = train_one_epoch(train_dataloader, optimiser, loss_function)
+    average_train_loss = np.mean(train_metrics["loss_history"])
+    average_train_accuracy = np.mean(train_metrics["accuracy_history"])
 
-    # image_grid = torchvision.utils.make_grid(
-    #     batch_images.int(), padding=2, pad_value=255
-    # )
-    # plt.imshow(np.transpose(image_grid, (1, 2, 0)))
-    # plt.show()
+    print(f"Epoch: {epoch}")
+    print(f"Train Loss: {average_train_loss}")
+    print(f"Train Accuracy: {average_train_accuracy}")
+
+    test_metrics = test_one_epoch(test_dataloader, loss_function)
+    average_loss = np.mean(test_metrics["loss_history"])
+    average_accuracy = np.mean(test_metrics["accuracy_history"])
+
+    print(f"Test Loss: {average_loss}")
+    print(f"Test Accuracy: {average_accuracy}")
+
+
+# for image, incorrect_label in zip(incorrect_guesses_images, incorrect_guesses_labels):
+#     print(incorrect_label)
+#     print(image.shape)
+#     plt.imshow(np.transpose(image, (1, 2, 0)))
+#     plt.show()
+
+# image_grid = torchvision.utils.make_grid(
+#     batch_images.int(), padding=2, pad_value=255
+# )
+# plt.imshow(np.transpose(image_grid, (1, 2, 0)))
+# plt.show()
