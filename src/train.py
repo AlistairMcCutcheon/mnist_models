@@ -11,27 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 from model import Model
 
 
-def train_one_epoch(model):
-    epoch_losses = []
-    epoch_accuracies = []
-    for batch in model.train_dataloader:
-        images, labels = batch
-
-        model.optimiser.zero_grad()
-
-        outputs = model.network(images)
-        loss = model.loss_function(outputs, labels)
-        loss.backward()
-        model.optimiser.step()
-
-        epoch_losses.append(loss.item())
-        accuracy_metrics = model.get_accuracy_metrics(labels, outputs)
-        epoch_accuracies.append(accuracy_metrics["average_accuracy"])
-
-    train_metrics = {"epoch_losses": epoch_losses, "epoch_accuracies": epoch_accuracies}
-    return train_metrics
-
-
 def test_one_epoch(model):
     epoch_losses = []
     epoch_accuracies = []
@@ -91,7 +70,7 @@ writer.add_graph(model.network, images)
 epochs = 2
 for epoch in range(epochs):
     print(epoch)
-    train_metrics = train_one_epoch(model)
+    train_metrics = model.train_one_epoch()
     average_train_loss = np.mean(train_metrics["epoch_losses"])
     average_train_accuracy = np.mean(train_metrics["epoch_accuracies"])
 

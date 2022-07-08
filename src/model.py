@@ -34,3 +34,26 @@ class Model:
             "correct_array": correct_array,
         }
         return accuracy_metrics
+
+    def train_one_epoch(self):
+        epoch_losses = []
+        epoch_accuracies = []
+        for batch in self.train_dataloader:
+            images, labels = batch
+
+            self.optimiser.zero_grad()
+
+            outputs = self.network(images)
+            loss = self.loss_function(outputs, labels)
+            loss.backward()
+            self.optimiser.step()
+
+            epoch_losses.append(loss.item())
+            accuracy_metrics = self.get_accuracy_metrics(labels, outputs)
+            epoch_accuracies.append(accuracy_metrics["average_accuracy"])
+
+        train_metrics = {
+            "epoch_losses": epoch_losses,
+            "epoch_accuracies": epoch_accuracies,
+        }
+        return train_metrics
