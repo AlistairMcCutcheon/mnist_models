@@ -4,7 +4,7 @@ import torch.nn as nn
 class ConvNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.model = nn.Sequential(
+        self.layers = nn.Sequential(
             nn.Conv2d(1, 20, 5),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
@@ -18,4 +18,4 @@ class ConvNet(nn.Module):
         )
 
     def forward(self, x):
-        return self.model(x)
+        return self.layers(x)
