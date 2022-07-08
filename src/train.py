@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from torch.utils.data import DataLoader, random_split
+
 from dataset import DatasetMNIST
 import torchvision
 import torch.optim as optim
@@ -11,39 +11,9 @@ from torch.utils.tensorboard import SummaryWriter
 from model import Model
 
 
-def get_dataloaders(dataset, batch_size, train_test_val_split):
-    assert sum(train_test_val_split) == 1
-    dataset_split_numbers = np.multiply(train_test_val_split, len(dataset)).astype(
-        np.int32
-    )
-    assert sum(dataset_split_numbers) == len(dataset)
-
-    datasets = random_split(dataset, dataset_split_numbers)
-    train_dataset, test_dataset, val_dataset = datasets
-
-    train_dataloader = (
-        DataLoader(train_dataset, batch_size, shuffle=True)
-        if train_test_val_split[0] != 0
-        else None
-    )
-    test_dataloader = (
-        DataLoader(test_dataset, batch_size, shuffle=True)
-        if train_test_val_split[1] != 0
-        else None
-    )
-    val_dataloader = (
-        DataLoader(val_dataset, batch_size, shuffle=True)
-        if train_test_val_split[2] != 0
-        else None
-    )
-    return train_dataloader, test_dataloader, val_dataloader
-
-
 dataset = DatasetMNIST(data_path="data/", image_size=28)
-batch_size = 32
-train_test_val_split = (0.8, 0.2, 0)
-train_dataloader, test_dataloader, val_dataloader = get_dataloaders(
-    dataset, batch_size, train_test_val_split
+train_dataloader, test_dataloader, val_dataloader = dataset.get_dataloaders(
+    batch_size=32, train_test_val_split=(0.8, 0.2, 0)
 )
 
 network = ConvNet()
@@ -52,6 +22,7 @@ optimiser = optim.SGD(network.parameters(), lr=0.0001, momentum=0.9)
 model = Model(network, loss_function, optimiser, train_dataloader, test_dataloader)
 
 writer = SummaryWriter()
+
 images, _ = model.get_arbitrary_batch()
 image_grid = model.get_image_grid(images)
 writer.add_image("Batch of images", image_grid)
@@ -68,8 +39,6 @@ for epoch in range(epochs):
     writer.add_scalar("Loss/test", test_metrics.get_average_loss(), epoch)
     writer.add_scalar("Accuracy/test", test_metrics.get_average_accuracies(), epoch)
 
-image_grid = model.get_image_grid(
-    test_metrics.get_incorrect_batch_output_images()[:batch_size]
-)
+image_grid = model.get_image_grid(test_metrics.get_incorrect_batch_output_images()[:64])
 writer.add_image("Sample of Incorrectly Labelled Images", image_grid)
 writer.close()

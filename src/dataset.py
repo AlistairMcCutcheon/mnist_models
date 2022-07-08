@@ -2,6 +2,7 @@ import numpy as np
 import gzip
 import os
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, random_split
 
 
 class DatasetMNIST(Dataset):
@@ -53,3 +54,30 @@ class DatasetMNIST(Dataset):
         image = self.all_images[index]
         label = self.one_hot_labels[index]
         return image, label
+
+    def get_dataloaders(self, batch_size, train_test_val_split):
+        assert sum(train_test_val_split) == 1
+        dataset_split_numbers = np.multiply(train_test_val_split, len(self)).astype(
+            np.int32
+        )
+        assert sum(dataset_split_numbers) == len(self)
+
+        datasets = random_split(self, dataset_split_numbers)
+        train_dataset, test_dataset, val_dataset = datasets
+
+        train_dataloader = (
+            DataLoader(train_dataset, batch_size, shuffle=True)
+            if train_test_val_split[0] != 0
+            else None
+        )
+        test_dataloader = (
+            DataLoader(test_dataset, batch_size, shuffle=True)
+            if train_test_val_split[1] != 0
+            else None
+        )
+        val_dataloader = (
+            DataLoader(val_dataset, batch_size, shuffle=True)
+            if train_test_val_split[2] != 0
+            else None
+        )
+        return train_dataloader, test_dataloader, val_dataloader
