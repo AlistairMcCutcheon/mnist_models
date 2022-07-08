@@ -128,5 +128,5 @@ for epoch in range(epochs):
 image_grid = torchvision.utils.make_grid(
     test_metrics["incorrect_images"][:batch_size], padding=2, pad_value=255
 )
-writer.add_image("A Sample of Incorrectly Labelled Images", image_grid.to(torch.uint8))
+writer.add_image("Sample of Incorrectly Labelled Images", image_grid.to(torch.uint8))
 writer.close()
