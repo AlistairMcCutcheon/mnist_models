@@ -101,7 +101,7 @@ image_grid = model.get_image_grid(images)
 writer.add_image("Batch of images", image_grid)
 writer.add_graph(model.network, images)
 
-epochs = 5
+epochs = 2
 for epoch in range(epochs):
     print(epoch)
     train_metrics = train_one_epoch(model)
@@ -118,8 +118,6 @@ for epoch in range(epochs):
     writer.add_scalar("Loss/test", average_test_loss, epoch)
     writer.add_scalar("Accuracy/test", average_test_accuracy, epoch)
 
-image_grid = torchvision.utils.make_grid(
-    test_metrics["incorrect_images"][:batch_size], padding=2, pad_value=255
-)
-writer.add_image("Sample of Incorrectly Labelled Images", image_grid.to(torch.uint8))
+image_grid = model.get_image_grid(images[:batch_size])
+writer.add_image("Sample of Incorrectly Labelled Images", image_grid)
 writer.close()
