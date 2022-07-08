@@ -7,6 +7,7 @@ import torch.optim as optim
 from convolutional_network import ConvNet
 import torch.nn as nn
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 
 def get_accuracy_metrics(labels, outputs):
@@ -88,11 +89,19 @@ batch_size = 32
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
 
+
 learning_rate = 0.0001
 momentum = 0.9
 network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
+
+
+images, labels = next(iter(train_dataloader))
+grid = torchvision.utils.make_grid(images, padding=2, pad_value=255)
+writer = SummaryWriter()
+writer.add_image("Batch of images", grid.to(torch.uint8))
+writer.add_graph(network, images)
 
 train_loss_history = []
 train_accuracy_history = []
@@ -101,53 +110,23 @@ test_accuracy_history = []
 
 epochs = 5
 for epoch in range(epochs):
+    print(epoch)
     train_metrics = train_one_epoch(train_dataloader, optimiser, loss_function)
     average_train_loss = np.mean(train_metrics["epoch_losses"])
     average_train_accuracy = np.mean(train_metrics["epoch_accuracies"])
 
-    train_loss_history.append(average_train_loss)
-    train_accuracy_history.append(average_train_accuracy)
-
-    print(f"Epoch: {epoch}")
-    print(f"Train Loss: {average_train_loss}")
-    print(f"Train Accuracy: {average_train_accuracy}")
+    writer.add_scalar("Loss/train", average_train_loss, epoch)
+    writer.add_scalar("Accuracy/train", average_train_accuracy, epoch)
 
     test_metrics = test_one_epoch(test_dataloader, loss_function)
     average_test_loss = np.mean(test_metrics["epoch_losses"])
     average_test_accuracy = np.mean(test_metrics["epoch_accuracies"])
 
-    test_loss_history.append(average_test_loss)
-    test_accuracy_history.append(average_test_accuracy)
+    writer.add_scalar("Loss/test", average_test_loss, epoch)
+    writer.add_scalar("Accuracy/test", average_test_accuracy, epoch)
 
-    print(f"Test Loss: {average_test_loss}")
-    print(f"Test Accuracy: {average_test_accuracy}")
-
-
-plt.plot(range(epochs), train_loss_history, color="red")
-plt.plot(range(epochs), test_loss_history, color="blue")
-plt.title("Loss per Epoch")
-plt.xlabel("epoch")
-plt.ylabel("loss")
-plt.show()
-
-plt.plot(range(epochs), train_accuracy_history, color="red")
-plt.plot(range(epochs), test_accuracy_history, color="blue")
-plt.title("Accuracy per Epoch")
-plt.xlabel("epoch")
-plt.ylabel("accuracy")
-plt.show()
-
-incorrect_dataset = zip(
-    test_metrics["incorrect_images"], test_metrics["incorrect_labels"]
+image_grid = torchvision.utils.make_grid(
+    test_metrics["incorrect_images"][:batch_size], padding=2, pad_value=255
 )
-for image, incorrect_label in incorrect_dataset:
-    print(incorrect_label)
-    print(image.shape)
-    plt.imshow(np.transpose(image, (1, 2, 0)))
-    plt.show()
-
-# image_grid = torchvision.utils.make_grid(
-#     batch_images.int(), padding=2, pad_value=255
-# )
-# plt.imshow(np.transpose(image_grid, (1, 2, 0)))
-# plt.show()
+writer.add_image("A Sample of Incorrectly Labelled Images", image_grid.to(torch.uint8))
+writer.close()
