@@ -11,17 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 from model import Model
 
 
-def get_accuracy_metrics(labels, outputs):
-    labels = np.array(labels)
-    correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-    average_accuracy = np.mean(correct_array)
-    accuracy_metrics = {
-        "average_accuracy": average_accuracy,
-        "correct_array": correct_array,
-    }
-    return accuracy_metrics
-
-
 def train_one_epoch(model):
     epoch_losses = []
     epoch_accuracies = []
@@ -36,7 +25,7 @@ def train_one_epoch(model):
         model.optimiser.step()
 
         epoch_losses.append(loss.item())
-        accuracy_metrics = get_accuracy_metrics(labels, outputs)
+        accuracy_metrics = model.get_accuracy_metrics(labels, outputs)
         epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
     train_metrics = {"epoch_losses": epoch_losses, "epoch_accuracies": epoch_accuracies}
@@ -58,7 +47,7 @@ def test_one_epoch(model):
             loss = model.loss_function(outputs, labels)
 
             epoch_losses.append(loss.item())
-            accuracy_metrics = get_accuracy_metrics(labels, outputs)
+            accuracy_metrics = model.get_accuracy_metrics(labels, outputs)
             epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
             incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
@@ -75,9 +64,7 @@ def test_one_epoch(model):
     return test_metrics
 
 
-image_size = 28
-data_path = "data/"
-dataset = DatasetMNIST(data_path, image_size)
+dataset = DatasetMNIST(data_path="data/", image_size=28)
 
 data_split_fractions = [0.8, 0.2]
 assert sum(data_split_fractions) == 1
