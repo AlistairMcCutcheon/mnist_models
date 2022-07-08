@@ -11,18 +11,40 @@ from torch.utils.tensorboard import SummaryWriter
 from model import Model
 
 
+def get_dataloaders(dataset, batch_size, train_test_val_split):
+    assert sum(train_test_val_split) == 1
+    dataset_split_numbers = np.multiply(train_test_val_split, len(dataset)).astype(
+        np.int32
+    )
+    assert sum(dataset_split_numbers) == len(dataset)
+
+    datasets = random_split(dataset, dataset_split_numbers)
+    train_dataset, test_dataset, val_dataset = datasets
+
+    train_dataloader = (
+        DataLoader(train_dataset, batch_size, shuffle=True)
+        if train_test_val_split[0] != 0
+        else None
+    )
+    test_dataloader = (
+        DataLoader(test_dataset, batch_size, shuffle=True)
+        if train_test_val_split[1] != 0
+        else None
+    )
+    val_dataloader = (
+        DataLoader(val_dataset, batch_size, shuffle=True)
+        if train_test_val_split[2] != 0
+        else None
+    )
+    return train_dataloader, test_dataloader, val_dataloader
+
+
 dataset = DatasetMNIST(data_path="data/", image_size=28)
-
-data_split_fractions = [0.8, 0.2]
-assert sum(data_split_fractions) == 1
-data_split_numbers = np.multiply(data_split_fractions, len(dataset)).astype(np.int32)
-assert sum(data_split_numbers) == len(dataset)
-datasets = random_split(dataset, data_split_numbers)
-train_dataset, test_dataset = datasets
-
 batch_size = 32
-train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
+train_test_val_split = (0.8, 0.2, 0)
+train_dataloader, test_dataloader, val_dataloader = get_dataloaders(
+    dataset, batch_size, train_test_val_split
+)
 
 network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
