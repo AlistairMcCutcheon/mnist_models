@@ -74,6 +74,6 @@ for epoch in range(epochs):
     writer.add_scalar("Loss/test", average_test_loss, epoch)
     writer.add_scalar("Accuracy/test", average_test_accuracy, epoch)
 
-image_grid = model.get_image_grid(images[:batch_size])
+image_grid = model.get_image_grid(test_metrics["incorrect_images"][:batch_size])
 writer.add_image("Sample of Incorrectly Labelled Images", image_grid)
 writer.close()
