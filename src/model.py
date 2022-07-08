@@ -1,6 +1,7 @@
 import torchvision
 import torch
 import numpy as np
+from batch_metrics import BatchMetrics
 
 
 class Model:
@@ -25,16 +26,6 @@ class Model:
         grid = torchvision.utils.make_grid(images, padding=2, pad_value=255)
         return grid.to(torch.uint8)
 
-    def get_accuracy_metrics(self, labels, outputs):
-        labels = np.array(labels)
-        correct_array = labels[np.arange(len(outputs)), outputs.argmax(1)]
-        average_accuracy = np.mean(correct_array)
-        accuracy_metrics = {
-            "average_accuracy": average_accuracy,
-            "correct_array": correct_array,
-        }
-        return accuracy_metrics
-
     def train_one_epoch(self):
         epoch_losses = []
         epoch_accuracies = []
@@ -49,7 +40,9 @@ class Model:
             self.optimiser.step()
 
             epoch_losses.append(loss.item())
-            accuracy_metrics = self.get_accuracy_metrics(labels, outputs)
+
+            batch_metrics = BatchMetrics(labels, outputs)
+            accuracy_metrics = batch_metrics.get_accuracy_metrics()
             epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
         train_metrics = {
@@ -73,7 +66,9 @@ class Model:
                 loss = self.loss_function(outputs, labels)
 
                 epoch_losses.append(loss.item())
-                accuracy_metrics = self.get_accuracy_metrics(labels, outputs)
+
+                batch_metrics = BatchMetrics(labels, outputs)
+                accuracy_metrics = batch_metrics.get_accuracy_metrics()
                 epoch_accuracies.append(accuracy_metrics["average_accuracy"])
 
                 incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
