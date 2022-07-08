@@ -95,10 +95,10 @@ loss_function = nn.CrossEntropyLoss()
 optimiser = optim.SGD(network.parameters(), lr=0.0001, momentum=0.9)
 model = Model(network, loss_function, optimiser, train_dataloader, test_dataloader)
 
-images, labels = next(iter(train_dataloader))
-grid = torchvision.utils.make_grid(images, padding=2, pad_value=255)
 writer = SummaryWriter()
-writer.add_image("Batch of images", grid.to(torch.uint8))
+images, _ = model.get_arbitrary_batch()
+image_grid = model.get_image_grid(images)
+writer.add_image("Batch of images", image_grid)
 writer.add_graph(model.network, images)
 
 epochs = 5
