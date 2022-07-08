@@ -137,3 +137,6 @@ poetry.lock
 
 # files containing data to work on
 data/
+
+# tensorboard output
+runs/
