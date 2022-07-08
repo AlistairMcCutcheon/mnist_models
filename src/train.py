@@ -8,6 +8,7 @@ from convolutional_network import ConvNet
 import torch.nn as nn
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from model import Model
 
 
 def get_accuracy_metrics(labels, outputs):
@@ -21,18 +22,18 @@ def get_accuracy_metrics(labels, outputs):
     return accuracy_metrics
 
 
-def train_one_epoch(train_dataloader, optimiser, loss_function):
+def train_one_epoch(model):
     epoch_losses = []
     epoch_accuracies = []
-    for batch in train_dataloader:
+    for batch in model.train_dataloader:
         images, labels = batch
 
-        optimiser.zero_grad()
+        model.optimiser.zero_grad()
 
-        outputs = network(images)
-        loss = loss_function(outputs, labels)
+        outputs = model.network(images)
+        loss = model.loss_function(outputs, labels)
         loss.backward()
-        optimiser.step()
+        model.optimiser.step()
 
         epoch_losses.append(loss.item())
         accuracy_metrics = get_accuracy_metrics(labels, outputs)
@@ -42,7 +43,7 @@ def train_one_epoch(train_dataloader, optimiser, loss_function):
     return train_metrics
 
 
-def test_one_epoch(test_dataloader, loss_function):
+def test_one_epoch(model):
     epoch_losses = []
     epoch_accuracies = []
 
@@ -50,11 +51,11 @@ def test_one_epoch(test_dataloader, loss_function):
     incorrect_labels = []
 
     with torch.no_grad():
-        for batch in test_dataloader:
+        for batch in model.test_dataloader:
             images, labels = batch
 
-            outputs = network(images)
-            loss = loss_function(outputs, labels)
+            outputs = model.network(images)
+            loss = model.loss_function(outputs, labels)
 
             epoch_losses.append(loss.item())
             accuracy_metrics = get_accuracy_metrics(labels, outputs)
@@ -89,36 +90,28 @@ batch_size = 32
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
 
-
-learning_rate = 0.0001
-momentum = 0.9
 network = ConvNet()
 loss_function = nn.CrossEntropyLoss()
-optimiser = optim.SGD(network.parameters(), learning_rate, momentum)
-
+optimiser = optim.SGD(network.parameters(), lr=0.0001, momentum=0.9)
+model = Model(network, loss_function, optimiser, train_dataloader, test_dataloader)
 
 images, labels = next(iter(train_dataloader))
 grid = torchvision.utils.make_grid(images, padding=2, pad_value=255)
 writer = SummaryWriter()
 writer.add_image("Batch of images", grid.to(torch.uint8))
-writer.add_graph(network, images)
-
-train_loss_history = []
-train_accuracy_history = []
-test_loss_history = []
-test_accuracy_history = []
+writer.add_graph(model.network, images)
 
 epochs = 5
 for epoch in range(epochs):
     print(epoch)
-    train_metrics = train_one_epoch(train_dataloader, optimiser, loss_function)
+    train_metrics = train_one_epoch(model)
     average_train_loss = np.mean(train_metrics["epoch_losses"])
     average_train_accuracy = np.mean(train_metrics["epoch_accuracies"])
 
     writer.add_scalar("Loss/train", average_train_loss, epoch)
     writer.add_scalar("Accuracy/train", average_train_accuracy, epoch)
 
-    test_metrics = test_one_epoch(test_dataloader, loss_function)
+    test_metrics = test_one_epoch(model)
     average_test_loss = np.mean(test_metrics["epoch_losses"])
     average_test_accuracy = np.mean(test_metrics["epoch_accuracies"])
 
