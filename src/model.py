@@ -57,3 +57,34 @@ class Model:
             "epoch_accuracies": epoch_accuracies,
         }
         return train_metrics
+
+    def test_one_epoch(self):
+        epoch_losses = []
+        epoch_accuracies = []
+
+        incorrect_images = []
+        incorrect_labels = []
+
+        with torch.no_grad():
+            for batch in self.test_dataloader:
+                images, labels = batch
+
+                outputs = self.network(images)
+                loss = self.loss_function(outputs, labels)
+
+                epoch_losses.append(loss.item())
+                accuracy_metrics = self.get_accuracy_metrics(labels, outputs)
+                epoch_accuracies.append(accuracy_metrics["average_accuracy"])
+
+                incorrect_indices = np.where(accuracy_metrics["correct_array"] == 0)
+                incorrect_images.extend(images[incorrect_indices])
+                incorrect_labels.extend(outputs[incorrect_indices])
+
+        test_metrics = {
+            "epoch_losses": epoch_losses,
+            "epoch_accuracies": epoch_accuracies,
+            "incorrect_images": incorrect_images,
+            "incorrect_labels": incorrect_labels,
+        }
+
+        return test_metrics
