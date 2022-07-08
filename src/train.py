@@ -61,19 +61,15 @@ epochs = 2
 for epoch in range(epochs):
     print(epoch)
     train_metrics = model.train_one_epoch()
-    average_train_loss = np.mean(train_metrics["epoch_losses"])
-    average_train_accuracy = np.mean(train_metrics["epoch_accuracies"])
-
-    writer.add_scalar("Loss/train", average_train_loss, epoch)
-    writer.add_scalar("Accuracy/train", average_train_accuracy, epoch)
+    writer.add_scalar("Loss/train", train_metrics.get_average_loss(), epoch)
+    writer.add_scalar("Accuracy/train", train_metrics.get_average_accuracies(), epoch)
 
     test_metrics = model.test_one_epoch()
-    average_test_loss = np.mean(test_metrics["epoch_losses"])
-    average_test_accuracy = np.mean(test_metrics["epoch_accuracies"])
+    writer.add_scalar("Loss/test", test_metrics.get_average_loss(), epoch)
+    writer.add_scalar("Accuracy/test", test_metrics.get_average_accuracies(), epoch)
 
-    writer.add_scalar("Loss/test", average_test_loss, epoch)
-    writer.add_scalar("Accuracy/test", average_test_accuracy, epoch)
-
-image_grid = model.get_image_grid(test_metrics["incorrect_images"][:batch_size])
+image_grid = model.get_image_grid(
+    test_metrics.get_incorrect_batch_output_images()[:batch_size]
+)
 writer.add_image("Sample of Incorrectly Labelled Images", image_grid)
 writer.close()
