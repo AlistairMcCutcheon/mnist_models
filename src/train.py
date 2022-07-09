@@ -9,7 +9,13 @@ from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 from model import Model
 
-transform = transforms.Compose([transforms.ToTensor()])
+transform = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.RandomRotation(30),
+        transforms.Normalize(0.5, 0.5),
+    ]
+)
 dataset = DatasetMNIST(data_path="data/", image_size=28, transform=transform)
 train_dataloader, test_dataloader, val_dataloader = dataset.get_dataloaders(
     batch_size=32, train_test_val_split=(0.8, 0.2, 0)
@@ -27,7 +33,7 @@ image_grid = model.get_image_grid(images)
 writer.add_image("Batch of images", image_grid)
 writer.add_graph(model.network, images)
 
-epochs = 2
+epochs = 100
 for epoch in range(epochs):
     print(epoch)
     train_metrics = model.train_one_epoch()
