@@ -6,25 +6,27 @@ from torch.utils.data import DataLoader, random_split
 
 
 class DatasetMNIST(Dataset):
-    def __init__(self, data_path, image_size=28):
+    def __init__(self, data_path, image_size=28, transform=None):
         def get_images(images_path, image_size):
             with gzip.open(images_path) as file:
                 file.read(16)
                 buffer = file.read()
-            train_images = np.frombuffer(buffer, dtype=np.uint8)
-            train_images = train_images.reshape(-1, 1, image_size, image_size)
-            return train_images
+            images = np.frombuffer(buffer, dtype=np.uint8)
+            images = images.reshape(-1, image_size, image_size, 1)
+            # images = np.divide(images, 255)
+            return images
 
         def get_labels(labels_path):
             with gzip.open(labels_path) as file:
                 file.read(8)
                 buffer = file.read()
-            train_labels = np.frombuffer(buffer, dtype=np.uint8)
-            return train_labels
+            labels = np.frombuffer(buffer, dtype=np.uint8)
+            return labels
 
         # http://yann.lecun.com/exdb/mnist/
         self.data_path = data_path
         self.image_size = image_size
+        self.transform = transform
 
         train_images_path = os.path.join(data_path, "train-images-idx3-ubyte.gz")
         train_labels_path = os.path.join(data_path, "train-labels-idx1-ubyte.gz")
@@ -52,6 +54,8 @@ class DatasetMNIST(Dataset):
 
     def __getitem__(self, index):
         image = self.all_images[index]
+        if self.transform is not None:
+            image = self.transform(image)
         label = self.one_hot_labels[index]
         return image, label
 
